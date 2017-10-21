@@ -14,6 +14,6 @@ typedef struct {
 
 void freeFile(File *aFile);
 bool readFile(File *aFile, const char *fileName);
-bool writeFile(File *aFile, const char *fileName);
+bool writeFile(File *aFile, const char *fileName, const size_t startOffset);
 
 #endif // _file_h_
