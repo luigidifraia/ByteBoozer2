@@ -50,3 +50,9 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Assembled files
+*.prg
+
+# Crunched files
+*.b2
