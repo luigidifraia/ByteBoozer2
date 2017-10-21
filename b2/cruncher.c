@@ -192,7 +192,7 @@ void wOffset(uint offset, uint len) {
     };
 
     // Finally write a whole byte, if necessary
-    wByte(offset & 255 ^ 255); // Inverted(!)
+    wByte((offset & 255) ^ 255); // Inverted(!)
     offset >>= 8;
 
   } else { // Offset is 1 byte
@@ -594,7 +594,6 @@ int writeOutput() {
   for (i = 0; i < ibufSize;) {
 
     uint link = context[i].next;
-    uint cost = context[i].cost;
     uint litLen = context[i].litLen;
     uint offset = context[i].offset;
 
