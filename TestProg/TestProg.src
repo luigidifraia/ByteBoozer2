@@ -1,0 +1,51 @@
+; Test program to show how to use ByteBoozer v2.0 decruncher
+; Written for DreamAss assembler accent.
+
+	; Basic start
+	*= $0801
+	.word BasicEnd
+	.word 0
+	.byte $9e ;sys
+	.pet "2061"
+	.byte 0
+BasicEnd
+	.word 0
+
+	sei
+
+	lda #$3b
+	sta $d011
+	lda #$d8
+	sta $d016
+	lda #$78
+	sta $d018
+	lda #2
+	sta $dd00
+	lda #0
+	sta $d020
+	sta $d021
+
+	ldx #>Pic
+	ldy #<Pic
+	jsr Decrunch
+
+	ldx #0
+	lda $5800,x
+	sta $d800,x
+	lda $5900,x
+	sta $d900,x
+	lda $5a00,x
+	sta $da00,x
+	lda $5b00,x
+	sta $db00,x
+	inx
+	bne *-25
+
+	jmp *
+
+
+#include "Decruncher.inc"
+
+
+Pic
+.binclude "Pic.prg.b2",2
