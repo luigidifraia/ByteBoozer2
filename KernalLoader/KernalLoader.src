@@ -145,9 +145,7 @@ CopyColors
 
 ; ByteBoozer Decruncher    /HCL May.2003
 ; B2 Decruncher            December 2014
-
-; call: Y = AddrLo
-;       X = AddrHi
+; Kernal loader            /TCE October 2017
 
 ;Variables..        #Bytes
 zp_base	= $02       ; -
@@ -176,6 +174,7 @@ GlEnd
 	; Verify if we can read first
 	lda $90
 	bne Error
+	; Input byte on serial bus
 	jsr $ee13
 .)}
 
@@ -289,7 +288,8 @@ End
 	lda $90
 	bne Success
 	jmp LoadAndDecrunch
-Success	clc
+Success
+	clc
 	; Skip next instruction
 	.byte $24
 Error
@@ -353,7 +353,6 @@ GetNewBits
 	pla
 	sty bits
 	rol bits
-GnbEnd
 	rts
 
 Tab
