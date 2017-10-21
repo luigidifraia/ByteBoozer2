@@ -25,7 +25,7 @@ SSerial sta LastDrv+1
 
 ; Loader wrapper
 
-ldwrap
+LdWrap
 	sei
 
 	lda #$36	; Switch BASIC ROM out but keep Kernal and I/O
@@ -46,7 +46,7 @@ ldwrap
 	lda #sz_fname1
 
 	jsr LoadFile	; Invoke loader
-	bcs done
+	bcs LWDone	; Halt in case of load error
 
 	sei
 
@@ -58,7 +58,7 @@ ldwrap
 
 	cli
 
-done	jmp *
+LWDone	jmp *
 
 fname1	.pet "data"
 sz_fname1 = *-fname1
