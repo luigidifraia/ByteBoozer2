@@ -12,3 +12,9 @@ Originally published on CSDb [here](http://csdb.dk/release/?id=145031).
 
 ## Extensions
 - Implemented the "-b" option.
+
+## Bonus content
+- A Kernal loader with on-the-fly decrunching that:
+  - loads linked files, 
+  - handles load errors, such as premature EOF, and 
+  - does NOT require sector/decrunch buffers!

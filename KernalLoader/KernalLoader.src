@@ -1,0 +1,370 @@
+	; Basic start
+
+	*= $0801
+	.word BasicEnd
+	.word 0
+	.byte $9e ;sys
+	.pet "2061"
+	.byte 0
+BasicEnd
+	.word 0
+
+; One-off setup (might need re-execution if locations are modified)
+
+setup
+	lda $ba		; Check if the current device
+	cmp #$08	; is a serial one
+	bcs _serial
+	lda #$08	; Default to device 8, if not
+_serial sta lastdr
+
+	ldx #$ff	; Signal no key pressed
+	stx $91
+	inx
+	stx $02a1	; Signal RS-232 interrupts are disabled
+
+; Loader wrapper
+
+ldwrap
+	sei
+
+	lda #$36	; Switch BASIC ROM out but keep Kernal and I/O
+	sta $01
+
+	lda #$00	; Disable all VIC Interrupt sources
+	sta $d01a
+	asl $d019	; Acnowledge pending interrupt requests
+
+	lda #$7f	; Disable all CIA Interrupt sources
+	sta $dc0d
+	sta $dd0d
+	lda $dc0d	; Acnowledge pending interrupt requests
+	lda $dd0d
+
+	ldx #<fname1	; Set filename properties
+	ldy #>fname1
+	lda #sz_fname1
+
+	jsr loadfile	; Invoke loader
+	bcs done
+
+	sei
+
+	lda #$35	; Switch out all ROMs
+	sta $01
+
+	jsr initmusicplayback
+	jsr showpicture
+
+	cli
+
+done	jmp *
+
+fname1	.pet "data"
+sz_fname1 = *-fname1
+
+initmusicplayback
+	sei
+	lda #<raster
+	sta $fffe
+	lda #>raster
+	sta $ffff
+	lda #50		; Set low bits of raster
+	sta $d012	; position
+	lda $d011
+	and #$7f	; Set high bit of raster
+	sta $d011	; position (0) and disable all interrupts
+	lda #$7f	; Set timer interrupt off
+	sta $dc0d
+	lda #$01	; Set raster interrupt on
+	sta $d01a
+	lda $dc0d	; Acnowledge pending interrupt requests
+	lda #$00
+	jsr $bbb8
+	cli
+	rts
+
+raster
+	pha
+	tya
+	pha
+	txa
+	pha
+	jsr $b21e
+	dec $d019
+	pla
+	tax
+	pla
+	tay
+	pla
+	rti
+
+showpicture
+	lda $dd00
+	and #$fc
+	sta $dd00	; Set videobank
+	lda #$3b
+	sta $d011	; Set Y-scrolling / bitmap mode
+	lda #$d8
+	sta $d016	; Set multicolor mode
+	lda #$80
+	sta $d018	; Set screen pointer
+	lda #$00
+	sta $d020	; Set correct background colors
+	lda #$00
+	sta $d021
+	ldx #$00
+copycolors
+	lda $bc00,x	; Copy the colorscreen
+	sta $d800,x
+	lda $bd00,x
+	sta $d900,x
+	lda $be00,x
+	sta $da00,x
+	lda $bf00,x
+	sta $db00,x
+	inx
+	bne copycolors
+	rts
+
+;-------------------------------------------------------------------------------
+; LOADFILE
+;
+; Loads files packed with ByteBoozer 2.0 from the disk using Kernal I/O
+;
+; Pre: Kernal disk routines expect RS-232 interrupts to be disabled ($02a1 
+;      = 0x00) and the STOP key flag to signal no key pressed ($91 = 0xff)
+;      Files need to be packed with the -b option in the extended version of b2
+; Parameters: X (low),Y (high): Address of filename
+;             A: Length of filename
+; Returns: C=0 File loaded OK
+;          C=1 Error
+; Modifies: A,X,Y
+;           zp_base-zp_base+2, $90, $94, $95, $a3, $a5, $b7-$bc
+;-------------------------------------------------------------------------------
+
+; ByteBoozer Decruncher    /HCL May.2003
+; B2 Decruncher            December 2014
+
+; call: Y = AddrLo
+;       X = AddrHi
+
+;Variables..        #Bytes
+zp_base	= $02       ; -
+bits	= zp_base   ;1
+put	= zp_base+1 ;2
+
+#macro	GetNextBit() {.(
+	asl bits
+	bne DgEnd
+	jsr GetNewBits
+DgEnd
+.)}
+
+#macro	GetLen() {.(
+	lda #1
+GlLoop
+	.GetNextBit()
+	bcc GlEnd
+	.GetNextBit()
+	rol
+	bpl GlLoop
+GlEnd
+.)}
+
+#macro	ReadByte() {.(
+	; Verify if we can read first
+	lda $90
+	bne Error
+	jsr $ee13
+.)}
+
+loadfile
+	sei
+
+	jsr $ffbd	; SETNAM: Set filename properties
+			; i.e: a=filename length ($b7), x=low byte of filename ptr ($bb),
+			; and y=high byte of filename ptr ($bc)
+
+	lda #$08	; Logical file
+	tay		; Secondary address
+lastdr=*+1
+	ldx #$08	; Last drive used successfully
+
+	jsr $ffba	; SETLFS: set logical file parameters
+			; i.e: a=logical file ($b8), y=secondary address ($b9),
+			; and x=current device ($ba)
+
+	jsr $f3d5	; Open file for serial bus devices
+
+	lda $ba
+	jsr $ed09	; TALKK : send talk on serial bus
+
+	lda #$68
+	jsr $edc7	; TKSAK : send secondary address (after talk) on serial bus
+
+	ldy #$00	; Clear ST
+	sty $90
+
+	tsx
+	stx StackPtr+1
+
+LoadAndDecrunch
+	jsr GetNewBits
+	sty put
+	jsr GetNewBits
+	sty put+1
+
+	lda #$80
+	sta bits
+DLoop
+	.GetNextBit()
+	bcs Match
+Literal
+	; Literal run.. get length.
+	.GetLen()
+	sta LLen+1
+
+	ldy #0
+LLoop
+	.ReadByte()
+	; Allow loading under ROMS and I/O
+	sei
+	ldx #$34
+	stx $01
+	sta (put),y
+	ldx #$36
+	stx $01
+	cli
+	iny
+LLen	cpy #0
+	bne LLoop
+
+	clc
+	tya
+	adc put
+	sta put
+	bcc LInc
+	inc put+1
+
+LInc	iny
+	beq DLoop
+
+	; Has to continue with a match..
+
+Match
+	; Match.. get length.
+	.GetLen()
+	sta MLen+1
+
+	; Length 255 -> EOF
+	cmp #$ff
+	beq End
+
+	; Get num bits
+	cmp #2
+	lda #0
+	rol
+	.GetNextBit()
+	rol
+	.GetNextBit()
+	rol
+	tay
+	lda Tab,y
+	beq M8
+
+	; Get bits < 8
+M_1	.GetNextBit()
+	rol
+	bcs M_1
+	bmi MShort
+M8
+	; Get byte
+	eor #$ff
+	tay
+	.ReadByte()
+	jmp Mdone
+
+End
+	; If not EOF, do next file in batch
+	lda $90
+	bne Success
+	jmp LoadAndDecrunch
+Success	clc
+	; Skip next instruction
+	.byte $24
+Error
+	sec
+	php
+	; Close all files and restore I/O to default devices
+	jsr $f32f
+	; Close serial bus device
+	jsr $f642
+	plp
+StackPtr
+	ldx #$00
+	txs
+	rts
+
+MShort
+	ldy #$ff
+Mdone
+	;clc
+	adc put
+	sta MLda+1
+	tya
+	adc put+1
+	sta MLda+2
+
+	; Allow loading under ROMS and I/O
+	sei
+	lda #$34
+	sta $01
+	ldy #$ff
+MLoop	iny
+MLda	lda $beef,y
+	sta (put),y
+MLen	cpy #0
+	bne MLoop
+	lda #$36
+	sta $01
+	cli
+
+	;sec
+	tya
+	adc put
+	sta put
+	bcc *+4
+	inc put+1
+
+	jmp DLoop
+
+GetNewBits
+	pha
+	txa
+	pha
+	php
+	.ReadByte()
+	inc $d020
+	dec $d020
+	tay
+	plp
+	pla
+	tax
+	pla
+	sty bits
+	rol bits
+GnbEnd
+	rts
+
+Tab
+	; Short offsets
+	.byte %11011111 ; 3
+	.byte %11111011 ; 6
+	.byte %00000000 ; 8
+	.byte %10000000 ; 10
+	; Long offsets
+	.byte %11101111 ; 4
+	.byte %11111101 ; 7
+	.byte %10000000 ; 10
+	.byte %11110000 ; 13
