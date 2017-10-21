@@ -11,12 +11,12 @@ BasicEnd
 
 ; One-off setup (might need re-execution if locations are modified)
 
-setup
+Setup
 	lda $ba		; Check if the current device
 	cmp #$08	; is a serial one
-	bcs _serial
+	bcs SSerial
 	lda #$08	; Default to device 8, if not
-_serial sta lastdr
+SSerial sta LastDrv+1
 
 	ldx #$ff	; Signal no key pressed
 	stx $91
@@ -45,7 +45,7 @@ ldwrap
 	ldy #>fname1
 	lda #sz_fname1
 
-	jsr loadfile	; Invoke loader
+	jsr LoadFile	; Invoke loader
 	bcs done
 
 	sei
@@ -53,8 +53,8 @@ ldwrap
 	lda #$35	; Switch out all ROMs
 	sta $01
 
-	jsr initmusicplayback
-	jsr showpicture
+	jsr InitMusicPlayback
+	jsr ShowPicture
 
 	cli
 
@@ -63,11 +63,11 @@ done	jmp *
 fname1	.pet "data"
 sz_fname1 = *-fname1
 
-initmusicplayback
+InitMusicPlayback
 	sei
-	lda #<raster
+	lda #<Raster
 	sta $fffe
-	lda #>raster
+	lda #>Raster
 	sta $ffff
 	lda #50		; Set low bits of raster
 	sta $d012	; position
@@ -84,7 +84,7 @@ initmusicplayback
 	cli
 	rts
 
-raster
+Raster
 	pha
 	tya
 	pha
@@ -99,7 +99,7 @@ raster
 	pla
 	rti
 
-showpicture
+ShowPicture
 	lda $dd00
 	and #$fc
 	sta $dd00	; Set videobank
@@ -114,7 +114,7 @@ showpicture
 	lda #$00
 	sta $d021
 	ldx #$00
-copycolors
+CopyColors
 	lda $bc00,x	; Copy the colorscreen
 	sta $d800,x
 	lda $bd00,x
@@ -124,7 +124,7 @@ copycolors
 	lda $bf00,x
 	sta $db00,x
 	inx
-	bne copycolors
+	bne CopyColors
 	rts
 
 ;-------------------------------------------------------------------------------
@@ -179,7 +179,7 @@ GlEnd
 	jsr $ee13
 .)}
 
-loadfile
+LoadFile
 	sei
 
 	jsr $ffbd	; SETNAM: Set filename properties
@@ -188,8 +188,7 @@ loadfile
 
 	lda #$08	; Logical file
 	tay		; Secondary address
-lastdr=*+1
-	ldx #$08	; Last drive used successfully
+LastDrv	ldx #$08	; Last drive used successfully
 
 	jsr $ffba	; SETLFS: set logical file parameters
 			; i.e: a=logical file ($b8), y=secondary address ($b9),
