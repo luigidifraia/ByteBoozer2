@@ -174,7 +174,7 @@ GlEnd
 	; Verify if we can read first
 	lda $90
 	bne Error
-	; Input byte on serial bus
+	; ACPTRK: input byte on serial bus
 	jsr $ee13
 .)}
 
