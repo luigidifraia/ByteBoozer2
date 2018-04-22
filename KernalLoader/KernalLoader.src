@@ -121,8 +121,8 @@ CopyColors
 	sta $d900,x
 	lda $be00,x
 	sta $da00,x
-	lda $bf00,x
-	sta $db00,x
+	lda $bee8,x
+	sta $dae8,x
 	inx
 	bne CopyColors
 	rts
