@@ -6,19 +6,19 @@ clean:
 # The disk tool is available here: http://csdb.dk/release/?id=145209
 
 TestDisk.d64: KernalLoader.prg.b2 Data
-        disk -name TestDisk.d64 \
+        disk -name $@ \
              -id 1 \
-             -w KernalLoader.prg.b2 \
+             -w $< \
              -w Data
 
 KernalLoader.prg.b2: KernalLoader.prg
-        b2 -e 080d KernalLoader.prg
+        b2 -e 080d $<
 
 Data: Music.prg.b2 Picture.prg.b2
 ifeq ($(findstring Windows,$(OS)),Windows)
-        copy /b Music.prg.b2 + Picture.prg.b2 Data
+        copy /b Music.prg.b2 + Picture.prg.b2 $@
 else
-        cat Music.prg.b2 Picture.prg.b2 > Data
+        cat $^ > $@
 endif
 
 KernalLoader.prg: KernalLoader.src
@@ -28,7 +28,7 @@ KernalLoader.prg: KernalLoader.src
         dreamass -o $@ $<
 
 Music.prg.b2: Music.prg
-        b2 -b Music.prg
+        b2 -b $<
 
 Picture.prg.b2: Picture.prg
-        b2 -b Picture.prg
+        b2 -b $<
