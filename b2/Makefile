@@ -6,4 +6,4 @@ OBJECTS = \
 	bb.c
 
 all: $(OBJECTS)
-	$(CC) -O3 $(OBJECTS) -o b2.exe
+	$(CC) -O3 $(OBJECTS) -o b2
