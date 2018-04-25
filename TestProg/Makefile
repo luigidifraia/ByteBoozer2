@@ -1,10 +1,10 @@
 all:	TestProg.prg
 
-TestProg.prg:	TestProg.src
+TestProg.prg:	TestProg.src Pic.prg.b2
 	@echo "----------------------------------------"
 	@echo " Assembling:" $<
 	@echo "----------------------------------------"
-	b2 Pic.prg
 	dreamass -o $@ $<
-	rm Pic.prg.b2
-	@echo
+
+Pic.prg.b2: Pic.prg
+	b2 $<
