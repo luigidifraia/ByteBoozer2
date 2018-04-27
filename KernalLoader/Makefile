@@ -8,7 +8,7 @@ clean:
 TestDisk.d64: KernalLoader.prg.b2 Data
 	disk -name $@ \
 	     -id 1 \
-	     -w $< \
+	     -w KernalLoader.prg.b2 \
 	     -w Data
 
 KernalLoader.prg.b2: KernalLoader.prg
