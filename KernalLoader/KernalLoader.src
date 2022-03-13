@@ -1,3 +1,6 @@
+; Kernal loader with on-the-fly decrunching
+; Written for DreamAss assembler accent
+
 	; Basic start
 
 	*= $0801
