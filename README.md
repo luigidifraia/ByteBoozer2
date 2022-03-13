@@ -6,6 +6,7 @@ Originally published on CSDb [here](http://csdb.dk/release/?id=145031).
 ## Notes
 - Compile with `gcc`.
 - The decruncher is coded with DreamAss accent.
+- Under Windows you might want to run `win32/b2var.bat` to setup your build environment.
 
 ## Fixes
 - A copy bit is added at the end of the output only when required.
