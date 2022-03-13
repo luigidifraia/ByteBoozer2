@@ -56,3 +56,6 @@ dkms.conf
 
 # Crunched files
 *.b2
+
+# Data files
+Data
