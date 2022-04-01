@@ -5,7 +5,8 @@ Originally published on CSDb [here](http://csdb.dk/release/?id=145031).
 
 ## Notes
 - Compile with `gcc`.
-- The decruncher is coded with DreamAss accent.
+- The decruncher is coded with DreamAss accent. A Windows executable is provided for user convenience.
+- To use the provided `Makefile` you need GNU `make`. A Windows executable is provided for user convenience.
 - Under Windows you might want to run `win32/b2var.bat` to setup your build environment.
 
 ## Fixes
